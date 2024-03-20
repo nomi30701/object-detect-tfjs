@@ -2,6 +2,7 @@ import drawBoundingBox from './drawBoundingBox.js';
 
 let isCameraOn = false;
 let stream = null;
+let animationId = null;
 const toggleCamera = async (model) => {
     const video = document.getElementById('input-camera');
     const opencamera_btn = document.getElementById('opencam-btn');
@@ -29,17 +30,23 @@ const toggleCamera = async (model) => {
         const predictAndDraw = async () => {
             const predictions = await model.detect(video);
             drawBoundingBox(predictions, video, video.videoWidth, video.videoHeight);
-            requestAnimationFrame(predictAndDraw);
+            animationId = requestAnimationFrame(predictAndDraw);
         };
         predictAndDraw();
         
     } else { // If the camera is on
+        cancelAnimationFrame(animationId); // cencel the animation frame
         if (stream) {
             stream.getTracks().forEach(track => track.stop());
         }
         opencamera_btn.textContent = 'Open Webcam';
         video.srcObject = null;
         isCameraOn = false;
+
+        // Clear the canvas
+        const canvas = document.getElementById('objdetect-canvas');
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
     }
 }
 export default toggleCamera;

@@ -39,7 +39,7 @@ function App() {
       <p>model: <span style={{backgroundColor: 'black', color: 'lightgreen', borderRadius: '10px'}}>Coco-ssd</span></p>
       <canvas id='objdetect-canvas'></canvas>
       <img id='input-img' src="" hidden />
-      <video id="input-camera" hidden></video>
+      <video id="input-camera" autoPlay hidden></video>
       <div id='btn-container'>
         <button id='openimg-btn' className='btn' onClick={() => fileInputRef.current.click()} disabled={buttonDisabled}>
           Open Image
