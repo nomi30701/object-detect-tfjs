@@ -25,7 +25,10 @@ function App() {
         loadedModel = await cocoSsd.load();
         break;
       case 'yolov8n':
-        loadedModel = await tf.loadGraphModel('./object-detect-tfjs/public/yolov8n_web_model/model.json');
+        // Update the path to the model
+        loadedModel = await tf.loadGraphModel(
+          'https://nomi30701/object-detect-tfjs/public/yolov8n_web_model/model.json'
+        );
         break;
     }
     setModel(loadedModel);
