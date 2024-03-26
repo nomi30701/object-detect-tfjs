@@ -20,6 +20,7 @@ function App() {
     setInfo('Loading model...');
     setInfoColor('red');
     let loadedModel;
+    let dummyInput;
     switch (selectedModel) { 
       case 'cocoSsd':
         loadedModel = await cocoSsd.load();
@@ -27,8 +28,11 @@ function App() {
       case 'yolov8n':
         // Update the path to the model
         loadedModel = await tf.loadGraphModel(
-          'https://nomi30701/object-detect-tfjs/public/yolov8n_web_model/model.json'
+          `${window.location.href}/yolov8n_web_model/model.json`
         );
+        dummyInput = tf.ones(loadedModel.inputs[0].shape);
+        loadedModel.execute(dummyInput);
+        tf.dispose(dummyInput);
         break;
     }
     setModel(loadedModel);
@@ -58,7 +62,6 @@ function App() {
         break;
       }
     }
-    console.log(predictions);
   };
 
   return (

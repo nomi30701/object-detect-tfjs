@@ -157,11 +157,8 @@ async function decoder(yoloOutput, imgWidth, imgHeight) {
     });
 
     // Dispose the tensors
-    convertedBoxes_yxyx.dispose();
-    scores_max.dispose();
-    classes.dispose();
-    nmsIndices.dispose();
-
+    tf.dispose([convertedBoxes_yxyx, scores_max, classes, nmsIndices]);
+    
     return result;
 }
 export default yolo_process;
