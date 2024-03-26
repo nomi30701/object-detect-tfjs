@@ -25,7 +25,7 @@ function App() {
         loadedModel = await cocoSsd.load();
         break;
       case 'yolov8n':
-        loadedModel = await tf.loadGraphModel('../public/yolov8n_web_model/model.json');
+        loadedModel = await tf.loadGraphModel('./public/yolov8n_web_model/model.json');
         break;
     }
     setModel(loadedModel);
