@@ -1,9 +1,10 @@
 import drawBoundingBox from './drawBoundingBox.js';
+import yolo_process from './yolov8_process.js';
 
 let isCameraOn = false;
 let stream = null;
 let animationId = null;
-const toggleCamera = async (model) => {
+const toggleCamera = async (model, model_name) => {
     const video = document.getElementById('input-camera');
     const opencamera_btn = document.getElementById('opencam-btn');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -27,8 +28,19 @@ const toggleCamera = async (model) => {
         await new Promise((resolve) => video.onplaying = resolve);
 
         // Run prediction and draw bounding box on each frame
+        let predictFunction;
+        switch (model_name) {
+            case 'cocoSsd':
+                predictFunction = model.detect;
+                console.log('cocoSsd')
+                break;
+            case 'yolov8n':
+                predictFunction = yolo_process.bind(null, model);
+                console.log('cocoSsd')
+                break;
+        }
         const predictAndDraw = async () => {
-            const predictions = await model.detect(video);
+            const predictions = await predictFunction(video);
             drawBoundingBox(predictions, video, video.videoWidth, video.videoHeight);
             animationId = requestAnimationFrame(predictAndDraw);
         };
