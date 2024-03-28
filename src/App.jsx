@@ -4,8 +4,9 @@ import yolo_process from './utils/yolov8_process';
 import drawBoundingBox from './utils/drawBoundingBox';
 import saveCanvasImage from './utils/saveImage';
 import toggleCamera from './utils/toggleCamera';
-import { useRef, useState } from 'react'
+import { useRef, useState, useCallback } from 'react'
 
+// TODO: new branch for <canvas> be a mask in <image> and <video>. if good for video fps.
 function App() {
   const fileInputRef = useRef();
   const [saveButtonDisabled, setSaveButtonDisabled] = useState(true);
@@ -15,34 +16,28 @@ function App() {
   const [infoColor, setInfoColor] = useState('black');
   const [selectedModel, setSelectedModel] = useState('cocoSsd');
 
-  // load model
-  const loadModel = async () => {
+  const loadModel = useCallback(async () => {
     setInfo('Loading model...');
     setInfoColor('red');
     let loadedModel;
-    let dummyInput;
     switch (selectedModel) { 
       case 'cocoSsd':
         loadedModel = await cocoSsd.load();
         break;
       case 'yolov8n':
-        // Update the path to the model
         loadedModel = await tf.loadGraphModel(
           `${window.location.href}/yolov8n_web_model/model.json`
         );
-        dummyInput = tf.ones(loadedModel.inputs[0].shape);
-        loadedModel.execute(dummyInput);
-        tf.dispose(dummyInput);
+        loadedModel.execute(tf.ones(loadedModel.inputs[0].shape));
         break;
     }
     setModel(loadedModel);
     setInfo('Model loaded.');
     setInfoColor('green');
     setButtonDisabled(false);
-  }
+  }, [selectedModel]);
 
-  // handle file upload
-  const handleFileUpload = async event => {
+  const handleFileUpload = useCallback(async event => {
     const file = event.target.files[0];
     const imgel = document.getElementById('input-img');
     imgel.src = URL.createObjectURL(file);
@@ -52,17 +47,14 @@ function App() {
     switch (selectedModel) {
       case 'cocoSsd':
         predictions = await model.detect(imgel);
-        drawBoundingBox(predictions, imgel, imgel.width, imgel.height);
-        setSaveButtonDisabled(false);
         break;
-      case 'yolov8n': {
-        predictions = await yolo_process(model, imgel);
-        drawBoundingBox(predictions, imgel, imgel.width, imgel.height);
-        setSaveButtonDisabled(false);
+      case 'yolov8n':
+        predictions = await yolo_process(model, imgel.width, imgel.height, imgel);
         break;
-      }
     }
-  };
+    drawBoundingBox(predictions, imgel, imgel.width, imgel.height);
+    setSaveButtonDisabled(false);
+  }, [model, selectedModel]);
 
   return (
     <>

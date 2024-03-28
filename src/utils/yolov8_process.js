@@ -1,97 +1,18 @@
 import * as tf from '@tensorflow/tfjs';
-const classnames = {
-    0: 'person',
-    1: 'bicycle',
-    2: 'car',
-    3: 'motorcycle',
-    4: 'airplane',
-    5: 'bus',
-    6: 'train',
-    7: 'truck',
-    8: 'boat',
-    9: 'traffic light',
-    10: 'fire hydrant',
-    11: 'stop sign',
-    12: 'parking meter',
-    13: 'bench',
-    14: 'bird',
-    15: 'cat',
-    16: 'dog',
-    17: 'horse',
-    18: 'sheep',
-    19: 'cow',
-    20: 'elephant',
-    21: 'bear',
-    22: 'zebra',
-    23: 'giraffe',
-    24: 'backpack',
-    25: 'umbrella',
-    26: 'handbag',
-    27: 'tie',
-    28: 'suitcase',
-    29: 'frisbee',
-    30: 'skis',
-    31: 'snowboard',
-    32: 'sports ball',
-    33: 'kite',
-    34: 'baseball bat',
-    35: 'baseball glove',
-    36: 'skateboard',
-    37: 'surfboard',
-    38: 'tennis racket',
-    39: 'bottle',
-    40: 'wine glass',
-    41: 'cup',
-    42: 'fork',
-    43: 'knife',
-    44: 'spoon',
-    45: 'bowl',
-    46: 'banana',
-    47: 'apple',
-    48: 'sandwich',
-    49: 'orange',
-    50: 'broccoli',
-    51: 'carrot',
-    52: 'hot dog',
-    53: 'pizza',
-    54: 'donut',
-    55: 'cake',
-    56: 'chair',
-    57: 'couch',
-    58: 'potted plant',
-    59: 'bed',
-    60: 'dining table',
-    61: 'toilet',
-    62: 'tv',
-    63: 'laptop',
-    64: 'mouse',
-    65: 'remote',
-    66: 'keyboard',
-    67: 'cell phone',
-    68: 'microwave',
-    69: 'oven',
-    70: 'toaster',
-    71: 'sink',
-    72: 'refrigerator',
-    73: 'book',
-    74: 'clock',
-    75: 'vase',
-    76: 'scissors',
-    77: 'teddy bear',
-    78: 'hair drier',
-    79: 'toothbrush'
-};
+import labels from './labels.json';
 
-async function yolo_process(model, imgel) {
+async function yolo_process(model, imgWidth, imgHeight, imgel) {
     const img = tf.browser.fromPixels(imgel);
     const resized = tf.image.resizeBilinear(img, [640, 640]);
     const expanded = resized.expandDims(0);
     const normalized = expanded.div(255);
-    const output = model.predict(normalized);
+    const output = model.execute(normalized);
     // [1, 84, 8400] 84 indices, 8400 values for each index
     // first 4 values are xc, yc, w, h, the rest are probabilities of each class.
 
-    const result = decoder(output, imgel.width/640, imgel.height/640);
+    const result = decoder(output, imgWidth/640, imgHeight/640);
+    tf.dispose([img, resized, expanded, normalized, output]);
+    console.log(labels[0]);
     return result;
 }
 
@@ -107,13 +28,11 @@ async function decoder(yoloOutput, imgWidth, imgHeight) {
         const reshaped = yoloOutput.transpose([2, 1, 0]).reshape([numDetections, values]);
 
         // Split the second dimension into boxes and scores
-        const boxes = reshaped.slice([0, 0], [-1, 4]);  // every row, first 4 elements (xc,yc,w,h)
-        const scores = reshaped.slice([0, 4], [-1, -1]); // except first 4 elements
+        // every row, first 4 elements (xc,yc,w,h)
+        // except first 4 elements
+        const [boxes, scores] = tf.split(reshaped, [4, values - 4], 1);
 
-        const x_center = boxes.slice([0, 0], [-1, 1]);
-        const y_center = boxes.slice([0, 1], [-1, 1]);
-        const width = boxes.slice([0, 2], [-1, 1]);
-        const height = boxes.slice([0, 3], [-1, 1]);
+        const [x_center, y_center, width, height] = tf.split(boxes, 4, 1);
         
         // Convert boxes from [x_center, y_center, width, height] to [y1, x1, y2, x2]
         const width_half = width.div(2);
@@ -151,7 +70,7 @@ async function decoder(yoloOutput, imgWidth, imgHeight) {
                 (bbox[3] - bbox[1]) * imgWidth,  // w
                 (bbox[2] - bbox[0]) * imgHeight,  // h
             ],
-            class: classnames[nmsClasses[index]],
+            class: labels[nmsClasses[index]],
             score: nmsScores[index]
         };
     });
