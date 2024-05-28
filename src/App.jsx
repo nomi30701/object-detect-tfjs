@@ -1,20 +1,21 @@
 import * as tf from '@tensorflow/tfjs'
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
+import Info_container from './Components/Info_container';
+import Canvas_continer from './Components/Canvas_container';
+import Button_container from './Components/Button_container';
 import yolo_process from './utils/yolov8_process';
 import drawBoundingBox from './utils/drawBoundingBox';
-import saveCanvasImage from './utils/saveImage';
-import toggleCamera from './utils/toggleCamera';
+
 import { useRef, useState, useCallback } from 'react'
 
 // TODO: new branch for <canvas> be a mask in <image> and <video>. if good for video fps.
 function App() {
-  const fileInputRef = useRef();
-  const [saveButtonDisabled, setSaveButtonDisabled] = useState(true);
+  const [selectedModel, setSelectedModel] = useState('cocoSsd');
   const [buttonDisabled, setButtonDisabled] = useState(true);
+  const [saveButtonDisabled, setSaveButtonDisabled] = useState(true);
   const [model, setModel] = useState(null);
   const [info, setInfo] = useState('Please Load model.');
   const [infoColor, setInfoColor] = useState('black');
-  const [selectedModel, setSelectedModel] = useState('cocoSsd');
 
   const loadModel = useCallback(async () => {
     setInfo('Loading model...');
@@ -55,31 +56,15 @@ function App() {
     drawBoundingBox(predictions, imgel, imgel.width, imgel.height);
     setSaveButtonDisabled(false);
   }, [model, selectedModel]);
-
+  
   return (
     <>
       <h2>📷Object Detection</h2>
-      <div id='info-container'>
-        <p>
-          model: <span id='model-info'>{selectedModel}</span>
-        </p>
-        <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)}>
-          <option value="cocoSsd">Coco-ssd</option>
-          <option value="yolov8n">yolov8n</option>
-        </select>
-      </div>
-      <canvas id='objdetect-canvas'></canvas>
-      <img id='input-img' src="" hidden />
-      <video id="input-camera" autoPlay hidden></video>
-      <div id='btn-container'>
-        <button id='openimg-btn' className='btn' onClick={() => fileInputRef.current.click()} disabled={buttonDisabled}>
-          Open Image
-          <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/jpeg, image/png" style={{display: 'none'}} />
-        </button>
-        <button id='saveimg-btn' className='btn' onClick={saveCanvasImage} disabled={saveButtonDisabled}>Save Image</button>
-        <button id='opencam-btn' className='btn' onClick={() => toggleCamera(model, selectedModel)} disabled={buttonDisabled}>Open Webcam</button>
-      </div>
-      <button id='load-btn' className='btn' onClick={loadModel}>Load model</button>
+      <Info_container selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
+      <Canvas_continer />
+      <Button_container loadModel={loadModel} buttonDisabled={buttonDisabled} 
+                        handleFileUpload={handleFileUpload} saveButtonDisabled={saveButtonDisabled} 
+                        model={model} selectedModel={selectedModel} />
       <p id='info' style={{color: infoColor}}>{info}</p>
     </>
   )
